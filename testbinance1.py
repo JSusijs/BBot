@@ -4,7 +4,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-
 driver = webdriver.Firefox()
 driver.get("https://www.binance.com/en/trading-bots")
 
@@ -15,9 +14,10 @@ try:
 finally:
 
     BOTmp = driver.find_element(By.ID, "botMarketPlace")
-    ROIp = BOTmp.find_elements(By.CLASS_NAME, "css-1bshycy")
+    Name = BOTmp.find_elements(By.NAME, "Perpetual")
+    ROI = BOTmp.find_elements(By.CLASS_NAME, "css-1bshycy")
 
-    for i in range(0, len(ROIp)):
-        print(ROIp[i].text)
+    for i in range(0, len(ROI)):
+        print(Name[i].text, ": ", ROI[i].text)
 
 driver.close()
