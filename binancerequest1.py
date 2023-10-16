@@ -2,10 +2,11 @@ import requests
 import json
 from matplotlib import pyplot as plt
 import math
+from scipy.stats import linregress
 import numpy as np
 
 url = 'https://www.binance.com/bapi/capital/v1/public/future/common/strategy/landing-page/queryTopStrategy'
-post = {"page":1,"rows":3,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":172800,"runningTimeMax":604800,"sort":"roi"}
+post = {"page":4,"rows":10,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":172800,"runningTimeMax":604800,"sort":"roi"}
 
 url_chart = 'https://www.binance.com/bapi/futures/v1/public/future/common/strategy/landing-page/queryRoiChart'
 
@@ -33,9 +34,9 @@ for i in range(0, len(BinanceList)):
     BinanceChart.insert(i, json.loads(stringResp_edited_chart_3))
 
 for i in range(0, len(BinanceChart)):
-    print(BinanceList[i]['strategyId'], ": ", BinanceList[i]['roi'])
-    for j in range(0, len(BinanceChart[i])):
-        print(BinanceChart[i][j]['time'], ": ", BinanceChart[i][j]['roi'])
+    print(BinanceList[i]['symbol'], ": ", BinanceList[i]['strategyId'], ": ", BinanceList[i]['roi'])
+#    for j in range(0, len(BinanceChart[i])):
+#        print(BinanceChart[i][j]['time'], ": ", BinanceChart[i][j]['roi'])
 
 g_roi_temp = []
 g_time_temp = []
@@ -54,4 +55,44 @@ for i in range(0, len(BinanceChart)):
 for i in range(0, len(BinanceChart)):
     plt.plot(g_time[i], g_roi[i])
 
+    x = np.linspace(0, len(g_time[i]), len(g_time[i]))
+    y = linregress(g_time[i], g_roi[i]).slope * x + linregress(g_time[i], g_roi[i]).intercept
+
+    plt.plot(x, y, ':')
+
+    print(linregress(g_time[i], g_roi[i], alternative='two-sided'))
+
 plt.show()
+
+InTrade = []
+NotInTrade_amount = []
+
+for i in range(0, len(BinanceChart)):
+    TimeTotal_temp = 0
+    TimeInTrade_temp = 0
+    NotInTrade_temp = 0
+    for j in range(1, len(g_time[i])):
+        if (g_roi[i][j-1] - g_roi[i][j]) != 0:
+            TimeTotal_temp += 1
+            TimeInTrade_temp += 1
+        else:
+            TimeTotal_temp += 1
+    for j in range(1, len(g_time[i])-1):
+        if (g_roi[i][j-1] - g_roi[i][j]) != 0:
+            if (g_roi[i][j] - g_roi[i][j+1]) == 0:
+                NotInTrade_temp += 1
+    if (g_roi[i][0] - g_roi[i][1]) == 0:
+        NotInTrade_temp += 1
+    InTrade.insert(i, (TimeInTrade_temp/TimeTotal_temp))
+    NotInTrade_amount.insert(i, NotInTrade_temp)
+    print(InTrade[i], " : ", NotInTrade_amount[i])
+
+Coef = []
+for i in range(0, len(BinanceList)):
+    symbol = BinanceList[i]['symbol']
+    url_24hr = 'https://www.binance.com/fapi/v1/ticker/24hr?symbol=' + symbol
+    getResp = requests.get(url_24hr).json()
+    Coef.insert(i, (linregress(g_time[i], g_roi[i], alternative='two-sided').slope * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2)) * (((float(BinanceList[i]['strategyParams']['upperLimit']) - float(BinanceList[i]['strategyParams']['lowerLimit']))/float(BinanceList[i]['strategyParams']['gridCount']))/float(getResp['weightedAvgPrice']))))
+    print(BinanceList[i]['symbol'], " : ", round(BinanceList[i]['runningTime']/3600, 1), "h : ",  BinanceList[i]['roi'], "% : ", round(Coef[i], 8))
+
+
