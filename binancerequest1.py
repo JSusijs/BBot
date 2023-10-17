@@ -2,11 +2,12 @@ import requests
 import json
 from matplotlib import pyplot as plt
 import math
-from scipy.stats import linregress
 import numpy as np
+from scipy.stats import linregress
+
 
 url = 'https://www.binance.com/bapi/capital/v1/public/future/common/strategy/landing-page/queryTopStrategy'
-post = {"page":4,"rows":10,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":172800,"runningTimeMax":604800,"sort":"roi"}
+post = {"page":1,"rows":100,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":0,"runningTimeMax":604800,"sort":"roi"}
 
 url_chart = 'https://www.binance.com/bapi/futures/v1/public/future/common/strategy/landing-page/queryRoiChart'
 
@@ -54,6 +55,8 @@ for i in range(0, len(BinanceChart)):
 
 for i in range(0, len(BinanceChart)):
     plt.plot(g_time[i], g_roi[i])
+    linear_analysis = linregress(g_time[i], g_roi[i])
+    print(linear_analysis.rvalue)
 
     x = np.linspace(0, len(g_time[i]), len(g_time[i]))
     y = linregress(g_time[i], g_roi[i]).slope * x + linregress(g_time[i], g_roi[i]).intercept
@@ -87,12 +90,35 @@ for i in range(0, len(BinanceChart)):
     NotInTrade_amount.insert(i, NotInTrade_temp)
     print(InTrade[i], " : ", NotInTrade_amount[i])
 
+url_volatility = 'https://www.binance.com/bapi/futures/v1/public/future/common/strategy/landing-page/queryTopVolatility'
+post_volatility = {"strategyType":2,"rows":1000,"page":1}
+jsonResp_volatility = requests.post(url_volatility, json=post_volatility).json()
+stringRespV = json.dumps(jsonResp_volatility)
+stringRespV_edited = "[" + stringRespV.split('[', 1)[1]
+stringRespV_edited_2 = stringRespV_edited.split(']', 1)[0] + "]"
+stringRespV_edited_3 = stringRespV_edited_2.replace("'", "\"")
+VolatilityList = json.loads(stringRespV_edited_3)
+print(VolatilityList)
+
 Coef = []
 for i in range(0, len(BinanceList)):
-    symbol = BinanceList[i]['symbol']
-    url_24hr = 'https://www.binance.com/fapi/v1/ticker/24hr?symbol=' + symbol
+    for j in range(0, len(VolatilityList)):
+        if VolatilityList[j]['symbol'] == BinanceList[i]['symbol']:
+            symbol_volatility = VolatilityList[j]['volatility']
+            break
+        else:
+            symbol_volatility = "null"
+
+    url_24hr = 'https://www.binance.com/fapi/v1/ticker/24hr?symbol=' + BinanceList[i]['symbol']
     getResp = requests.get(url_24hr).json()
-    Coef.insert(i, (linregress(g_time[i], g_roi[i], alternative='two-sided').slope * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2)) * (((float(BinanceList[i]['strategyParams']['upperLimit']) - float(BinanceList[i]['strategyParams']['lowerLimit']))/float(BinanceList[i]['strategyParams']['gridCount']))/float(getResp['weightedAvgPrice']))))
-    print(BinanceList[i]['symbol'], " : ", round(BinanceList[i]['runningTime']/3600, 1), "h : ",  BinanceList[i]['roi'], "% : ", round(Coef[i], 8))
+
+# Coefficient attempt 1
+#    Coef.insert(i, (InTrade[i] * linregress(g_time[i], g_roi[i], alternative='two-sided').slope * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2)) * (((float(BinanceList[i]['strategyParams']['upperLimit']) - float(BinanceList[i]['strategyParams']['lowerLimit']))/float(BinanceList[i]['strategyParams']['gridCount']))/float(getResp['weightedAvgPrice']))))
+
+# Coefficient attempt 2
+    Coef.insert(i, (InTrade[i] * linregress(g_time[i], g_roi[i], alternative='two-sided').slope * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2)) * ((float(BinanceList[i]['strategyParams']['upperLimit']) - float(BinanceList[i]['strategyParams']['lowerLimit']))/float(BinanceList[i]['strategyParams']['gridCount']))))
+
+    if Coef[i] > 0.00035:
+        print(BinanceList[i]['symbol'], " : ", round(BinanceList[i]['runningTime']/3600, 1), "h : ", symbol_volatility, " : ", BinanceList[i]['roi'], "% : ", round(Coef[i], 8))
 
 
