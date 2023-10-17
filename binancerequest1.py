@@ -7,7 +7,7 @@ from scipy.stats import linregress
 
 
 url = 'https://www.binance.com/bapi/capital/v1/public/future/common/strategy/landing-page/queryTopStrategy'
-post = {"page":1,"rows":100,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":0,"runningTimeMax":604800,"sort":"roi"}
+post = {"page":1,"rows":10,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":0,"runningTimeMax":604800,"sort":"roi"}
 
 url_chart = 'https://www.binance.com/bapi/futures/v1/public/future/common/strategy/landing-page/queryRoiChart'
 
@@ -116,9 +116,9 @@ for i in range(0, len(BinanceList)):
 #    Coef.insert(i, (InTrade[i] * linregress(g_time[i], g_roi[i], alternative='two-sided').slope * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2)) * (((float(BinanceList[i]['strategyParams']['upperLimit']) - float(BinanceList[i]['strategyParams']['lowerLimit']))/float(BinanceList[i]['strategyParams']['gridCount']))/float(getResp['weightedAvgPrice']))))
 
 # Coefficient attempt 2
-    Coef.insert(i, (InTrade[i] * linregress(g_time[i], g_roi[i], alternative='two-sided').slope * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2)) * ((float(BinanceList[i]['strategyParams']['upperLimit']) - float(BinanceList[i]['strategyParams']['lowerLimit']))/float(BinanceList[i]['strategyParams']['gridCount']))))
+    Coef.insert(i, (InTrade[i] * linregress(g_time[i], g_roi[i], alternative='two-sided').slope * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2)) * (((float(BinanceList[i]['strategyParams']['upperLimit']) - float(BinanceList[i]['strategyParams']['lowerLimit']))/float(BinanceList[i]['strategyParams']['gridCount']))/linregress(g_time[i], g_roi[i], alternative='two-sided').stderr)))
 
-    if Coef[i] > 0.00035:
+    if Coef[i] > 0:
         print(BinanceList[i]['symbol'], " : ", round(BinanceList[i]['runningTime']/3600, 1), "h : ", symbol_volatility, " : ", BinanceList[i]['roi'], "% : ", round(Coef[i], 8))
 
 
