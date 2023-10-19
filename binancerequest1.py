@@ -3,11 +3,11 @@ import json
 from matplotlib import pyplot as plt
 import math
 import numpy as np
-from scipy.stats import linregress
+from scipy.stats import linregress, tstd
 
 
 url = 'https://www.binance.com/bapi/capital/v1/public/future/common/strategy/landing-page/queryTopStrategy'
-post = {"page":1,"rows":10,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":0,"runningTimeMax":604800,"sort":"roi"}
+post = {"page":1,"rows":18,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":0,"runningTimeMax":604800,"sort":"roi"}
 
 url_chart = 'https://www.binance.com/bapi/futures/v1/public/future/common/strategy/landing-page/queryRoiChart'
 
@@ -20,6 +20,7 @@ stringResp_edited_2 = stringResp_edited.split(']', 1)[0] + "]"
 stringResp_edited_3 = stringResp_edited_2.replace("'", "\"")
 
 BinanceChart = []
+Roi_Av = []
 
 BinanceList = json.loads(stringResp_edited_3)
 
@@ -33,6 +34,9 @@ for i in range(0, len(BinanceList)):
     stringResp_edited_chart_2 = stringResp_edited_chart.split(']', 1)[0] + "]"
     stringResp_edited_chart_3 = stringResp_edited_chart_2.replace("'", "\"")
     BinanceChart.insert(i, json.loads(stringResp_edited_chart_3))
+    Roi_Av.insert(i, float(BinanceList[i]['roi'])/(BinanceList[i]['runningTime']/3600))
+
+print(Roi_Av)
 
 for i in range(0, len(BinanceChart)):
     print(BinanceList[i]['symbol'], ": ", BinanceList[i]['strategyId'], ": ", BinanceList[i]['roi'])
@@ -43,15 +47,39 @@ g_roi_temp = []
 g_time_temp = []
 g_roi = []
 g_time = []
+g_roi_hourly = []
+g_roi_hourly_temp = []
+g_sd_hourly = []
+g_sd_hourly_temp = []
 
 for i in range(0, len(BinanceChart)):
     for j in range(0,len(BinanceChart[i])):
         g_time_temp.insert(j, math.floor((BinanceChart[i][j]['time']-BinanceChart[i][0]['time'])/3600000))
         g_roi_temp.insert(j, BinanceChart[i][j]['roi'])
+        if j != 0:
+            g_roi_hourly_temp.insert(j, BinanceChart[i][j]['roi']-BinanceChart[i][j-1]['roi'])
     g_time.insert(i, g_time_temp)
     g_roi.insert(i, g_roi_temp)
+    g_roi_hourly.insert(i, g_roi_hourly_temp)
+    g_sd_hourly_temp = tstd(g_roi_hourly_temp)
+    g_sd_hourly.insert(i, g_sd_hourly_temp)
     g_time_temp = []
     g_roi_temp = []
+    g_roi_hourly_temp = []
+
+# Without hour zero
+print(g_roi_hourly)
+print(g_sd_hourly)
+
+sharpe = []
+t_value = []
+#Sharpe
+for i in range(0, len(BinanceList)):
+    sharpe.insert(i, Roi_Av[i]/g_sd_hourly[i])
+    t_value.insert(i, Roi_Av[i]/g_sd_hourly[i] * math.sqrt((BinanceList[i]['runningTime']/86400)))
+
+print(sharpe)
+print(t_value)
 
 for i in range(0, len(BinanceChart)):
     plt.plot(g_time[i], g_roi[i])
@@ -116,7 +144,12 @@ for i in range(0, len(BinanceList)):
 #    Coef.insert(i, (InTrade[i] * linregress(g_time[i], g_roi[i], alternative='two-sided').slope * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2)) * (((float(BinanceList[i]['strategyParams']['upperLimit']) - float(BinanceList[i]['strategyParams']['lowerLimit']))/float(BinanceList[i]['strategyParams']['gridCount']))/float(getResp['weightedAvgPrice']))))
 
 # Coefficient attempt 2
-    Coef.insert(i, (InTrade[i] * linregress(g_time[i], g_roi[i], alternative='two-sided').slope * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2)) * (((float(BinanceList[i]['strategyParams']['upperLimit']) - float(BinanceList[i]['strategyParams']['lowerLimit']))/float(BinanceList[i]['strategyParams']['gridCount']))/linregress(g_time[i], g_roi[i], alternative='two-sided').stderr)))
+#    Coef.insert(i, (InTrade[i] * linregress(g_time[i], g_roi[i], alternative='two-sided').slope * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2)) * (((float(BinanceList[i]['strategyParams']['upperLimit']) - float(BinanceList[i]['strategyParams']['lowerLimit']))/float(BinanceList[i]['strategyParams']['gridCount']))/linregress(g_time[i], g_roi[i], alternative='two-sided').stderr)))
+
+# Coefficient attempt 3
+#    Coef.insert(i, (InTrade[i] * linregress(g_time[i], g_roi[i], alternative='two-sided').slope * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2))))
+
+    Coef.insert(i, t_value[i] * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2)))
 
     if Coef[i] > 0:
         print(BinanceList[i]['symbol'], " : ", round(BinanceList[i]['runningTime']/3600, 1), "h : ", symbol_volatility, " : ", BinanceList[i]['roi'], "% : ", round(Coef[i], 8))
