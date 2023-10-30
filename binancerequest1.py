@@ -4,10 +4,11 @@ from matplotlib import pyplot as plt
 import math
 import numpy as np
 from scipy.stats import linregress, tstd
+from scipy import stats
 
 
 url = 'https://www.binance.com/bapi/capital/v1/public/future/common/strategy/landing-page/queryTopStrategy'
-post = {"page":1,"rows":18,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":0,"runningTimeMax":604800,"sort":"roi"}
+post = {"page":1,"rows":450,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":0,"runningTimeMax":172800,"sort":"roi"}
 
 url_chart = 'https://www.binance.com/bapi/futures/v1/public/future/common/strategy/landing-page/queryRoiChart'
 
@@ -89,11 +90,11 @@ for i in range(0, len(BinanceChart)):
     x = np.linspace(0, len(g_time[i]), len(g_time[i]))
     y = linregress(g_time[i], g_roi[i]).slope * x + linregress(g_time[i], g_roi[i]).intercept
 
-    plt.plot(x, y, ':')
+    # plt.plot(x, y, ':')
 
     print(linregress(g_time[i], g_roi[i], alternative='two-sided'))
 
-plt.show()
+# plt.show()
 
 InTrade = []
 NotInTrade_amount = []
@@ -128,30 +129,66 @@ stringRespV_edited_3 = stringRespV_edited_2.replace("'", "\"")
 VolatilityList = json.loads(stringRespV_edited_3)
 print(VolatilityList)
 
+P_value = []
+P_value_log = []
+
 Coef = []
 for i in range(0, len(BinanceList)):
-    for j in range(0, len(VolatilityList)):
-        if VolatilityList[j]['symbol'] == BinanceList[i]['symbol']:
-            symbol_volatility = VolatilityList[j]['volatility']
-            break
-        else:
-            symbol_volatility = "null"
+    #for j in range(0, len(VolatilityList)):
+    #    if VolatilityList[j]['symbol'] == BinanceList[i]['symbol']:
+    #        symbol_volatility = VolatilityList[j]['volatility']
+    #        break
+    #    else:
+    #        symbol_volatility = "null"
 
     url_24hr = 'https://www.binance.com/fapi/v1/ticker/24hr?symbol=' + BinanceList[i]['symbol']
     getResp = requests.get(url_24hr).json()
 
-# Coefficient attempt 1
-#    Coef.insert(i, (InTrade[i] * linregress(g_time[i], g_roi[i], alternative='two-sided').slope * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2)) * (((float(BinanceList[i]['strategyParams']['upperLimit']) - float(BinanceList[i]['strategyParams']['lowerLimit']))/float(BinanceList[i]['strategyParams']['gridCount']))/float(getResp['weightedAvgPrice']))))
-
-# Coefficient attempt 2
-#    Coef.insert(i, (InTrade[i] * linregress(g_time[i], g_roi[i], alternative='two-sided').slope * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2)) * (((float(BinanceList[i]['strategyParams']['upperLimit']) - float(BinanceList[i]['strategyParams']['lowerLimit']))/float(BinanceList[i]['strategyParams']['gridCount']))/linregress(g_time[i], g_roi[i], alternative='two-sided').stderr)))
-
-# Coefficient attempt 3
-#    Coef.insert(i, (InTrade[i] * linregress(g_time[i], g_roi[i], alternative='two-sided').slope * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2))))
+    # P-Value
+    P_value.insert(i, stats.ttest_1samp(g_roi_hourly[i], 0).pvalue)
+    P_value_log.insert(i, np.log10(P_value[i]))
 
     Coef.insert(i, t_value[i] * (pow(linregress(g_time[i], g_roi[i], alternative='two-sided').rvalue, 2)))
 
-    if Coef[i] > 0:
-        print(BinanceList[i]['symbol'], " : ", round(BinanceList[i]['runningTime']/3600, 1), "h : ", symbol_volatility, " : ", BinanceList[i]['roi'], "% : ", round(Coef[i], 8))
+    # if Coef[i] > 0:
+    #    print(BinanceList[i]['symbol'], " : ", round(BinanceList[i]['runningTime']/3600, 1), "h : ", symbol_volatility, " : ", BinanceList[i]['roi'], "% : ", round(Coef[i], 8), " : ", np.log10(P_value[i]))
+
+# P-Value analysis
+
+P_mean_log = np.mean(P_value_log)
+P_std_log = tstd(P_value_log)
+P_hurdle = pow(10, (P_mean_log+P_std_log))/(len(BinanceList))
+Coef_mean = np.mean(Coef)
+Coef_std = tstd(Coef)
+Coef_hurdle = Coef_mean - Coef_std
+print(P_mean_log)
+print(P_std_log)
+print(np.log10(P_hurdle))
+print(Coef_mean)
+print(Coef_std)
+print(Coef_hurdle)
+
+passed_temp =[]
+passed = []
+
+for i in range(0, len(BinanceList)):
+    if Coef[i] > Coef_mean:
+        if P_value[i] < pow(10, P_mean_log):
+            print(BinanceList[i]['symbol'], " : ", round(BinanceList[i]['runningTime']/3600, 1), "h : ", BinanceList[i]['roi'], "% : ", round(Coef[i], 8), " : ", np.log10(P_value[i]), " : PASS")
+            passed_temp = {"position": i, "symbol": BinanceList[i]['symbol'], "strategyId": BinanceList[i]['strategyId'], "runningTime": round(BinanceList[i]['runningTime']/3600, 1), "roi": BinanceList[i]['roi'], "coef": round(Coef[i], 8), "p_value": P_value[i]}
+            # passed_temp = [i, BinanceList[i]['symbol'], round(BinanceList[i]['runningTime']/3600, 1), BinanceList[i]['roi'], round(Coef[i], 8), P_value[i]]
+            passed.append(passed_temp)
+        else:
+            print(BinanceList[i]['symbol'], " : ", round(BinanceList[i]['runningTime']/3600, 1), "h : ", BinanceList[i]['roi'], "% : ", round(Coef[i], 8), " : ", np.log10(P_value[i]), " : FAIL")
+    else:
+        print(BinanceList[i]['symbol'], " : ", round(BinanceList[i]['runningTime']/3600, 1), "h : ", BinanceList[i]['roi'], "% : ", round(Coef[i], 8), " : ", np.log10(P_value[i]), " : FAIL")
 
 
+def sort_second(val):
+    return val['coef']
+
+
+passed.sort(key=sort_second, reverse=True)
+
+for i in range(0, len(passed)):
+    print(passed[i])
