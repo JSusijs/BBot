@@ -103,11 +103,11 @@ for i in range(0, len(BinanceChart)):
     x = np.linspace(0, len(g_time[i]), len(g_time[i]))
     y = linregress(g_time[i], g_roi[i]).slope * x + linregress(g_time[i], g_roi[i]).intercept
 
-    # plt.plot(x, y, ':')
+    plt.plot(x, y, ':')
 
     print(linregress(g_time[i], g_roi[i], alternative='two-sided'))
 
-# plt.show()
+plt.show()
 
 InTrade = []
 NotInTrade_amount = []
