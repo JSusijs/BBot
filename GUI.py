@@ -1,4 +1,5 @@
 import PySimpleGUI as sg
+from binancerequest2 import analysis
 
 # Define the button size
 button_size = (7, 1)
@@ -55,13 +56,11 @@ def create_start_window():
             selected_runtime = start_values['-RUNTIME-']
             selected_gridtype = start_values['-GRIDTYPE-']
 
-            table_data = [
-                ['Parameter 1', 'Value 1', 'Parameter 1', 'Value 1', 'Parameter 1'],
-                ['Parameter 2', 'Value 2'],
-                ['Parameter 3', 'Value 3'],
-                ['Parameter 4', 'Value 4'],
-                ['Parameter 5', 'Value 5'],
-            ]
+            data = analysis()
+            table_data = []
+            for i in range(0, len(data)):
+                row_data = [data[i]['symbol'], data[i]['strategyId'], data[i]['runningTime'], data[i]['roi'], data[i]['coef']]
+                table_data.insert(i, row_data)
 
             table_headings = ['Symbol', 'strategyID', 'Runtime', 'ROI', 'Coef']
 
@@ -69,7 +68,7 @@ def create_start_window():
             hello_layout = [
                 [sg.Text(f"Selected Runtime: {selected_runtime}", background_color="#4a4a4a", font=("Helvetica", 26, "bold"))],
                 [sg.Text(f"Selected Grid Type: {selected_gridtype}", background_color="#4a4a4a", font=("Helvetica", 26, "bold"))],
-                [sg.Table(values=table_data, headings=table_headings, size=(150, 40), background_color="#4a4a4a", font=("Helvetica", 15, "bold"), auto_size_columns=False, justification='center', key='-TABLE-')],
+                [sg.Table(values=table_data, headings=table_headings, num_rows=20, background_color="#4a4a4a", font=("Helvetica", 15, "bold"), auto_size_columns=False, justification='center', key='-TABLE-')],
                 [sg.Button("BACK TO MAIN MENU", size=(46, 1), font=("Helvetica", 20), key='-OK-', button_color=("black", "orange"))]
 
             ]

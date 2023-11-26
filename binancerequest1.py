@@ -8,7 +8,7 @@ from scipy import stats
 
 
 url = 'https://www.binance.com/bapi/capital/v1/public/future/common/strategy/landing-page/queryTopStrategy'
-post = {"page":1,"rows":300,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":0,"runningTimeMax":172800,"sort":"roi"}
+post = {"page":1,"rows":200,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":0,"runningTimeMax":172800,"sort":"roi"}
 
 url_chart = 'https://www.binance.com/bapi/futures/v1/public/future/common/strategy/landing-page/queryRoiChart'
 
@@ -69,8 +69,8 @@ for i in range(0, len(BinanceChart)):
     g_roi_temp = []
     g_roi_hourly_temp = []
 
-for i in range(0, bll):
-    if g_sd_hourly[i] == 'nan':
+for i in range(0, len(g_sd_hourly)):
+    if g_sd_hourly[i] == 'nan' or g_sd_hourly[i] == 0:
         del BinanceChart[i]
         del BinanceList[i]
         del Roi_Av[i]
@@ -78,8 +78,7 @@ for i in range(0, bll):
         del g_roi_hourly[i]
         del g_roi[i]
         del g_time[i]
-        bll = bll-1
-        i = i-1
+        #i = i-1
 
 # Without hour zero
 print(g_roi_hourly)

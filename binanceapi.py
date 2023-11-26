@@ -15,7 +15,7 @@ def message_handler(_, message):
     info = message
 
 
-um_futures_client = UMFutures(key='8GaWaBZ7vYQNDUDE7tcYMMsjF7FwxyNgMC9OtZXDsdMnkQcPSoCF0AeyWwq4vPEz', secret='6ZWRExVLogY5xORd4sCXLtddFKdOUqlDbm2bv3BiFvPBVjEjgp9Pei5I3htsY3TP')
+um_futures_client = UMFutures(key='', secret='')
 my_client = UMFuturesWebsocketClient(on_message=message_handler, is_combined=True)
 my_client.agg_trade(symbol="GALAUSDT", id=1)
 #logging.info(um_futures_client.account(recvWindow=6000))
