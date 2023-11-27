@@ -1,10 +1,10 @@
 import PySimpleGUI as sg
 from binancerequest2 import analysis
 
-# Define the button size
+
 button_size = (7, 1)
 
-# Create the main window
+
 layout = [
     [
         sg.Button("START", size=button_size, font=("Helvetica", 30, "bold"),  pad=(4, 5), key='-START-', button_color=("black", "green")),
@@ -17,23 +17,32 @@ layout = [
 
 
 window = sg.Window("Binance Trading Bots", layout, background_color="#4a4a4a", finalize=True)
-active_window = 'main'  # Track the active window
+active_window = 'main'
 
 # Create a function to create and show a new empty window
 def create_start_window():
     start_layout = [
         [
-            [sg.Text("Choose trading bot parameters", background_color="#4a4a4a", font=("Helvetica", 26, "bold"), pad=(10, 0))],
-            [sg.Text(("Select runtime:"), background_color="#4a4a4a", font=("Helvetica", 25)),
-             sg.Text((""), pad=(16, 0), background_color="#4a4a4a"),
-             sg.Text(("Select grid type:"), background_color="#4a4a4a", font=("Helvetica", 25))],
+            [sg.Text("Choose trading bot parameters", background_color="#4a4a4a", font=("Helvetica", 23, "bold"), pad=(0, 0))],
 
-            [sg.Combo(['≤1 Day', '1-2 Days', '2-7 Days', '7-15 Days', '15-30 Days', ' ≥30 Days'], key='-RUNTIME-', size=(14, 1), font=("Helvetica", 20)),
-             sg.Text((""), pad=(10, 0), background_color="#4a4a4a"),
-             sg.Combo(['Futures grid', 'Spot grid'], key='-GRIDTYPE-', size=(14, 1), font=("Helvetica", 20))],
+            [sg.Text(("Select grid type:"), background_color="#4a4a4a", font=("Helvetica", 25))],
+            [sg.Combo(['Futures grid', 'Spot grid'], key='-GRID-', size=(14, 1), font=("Helvetica", 20))],
 
-            [sg.Button('START ANALYSIS', size=(33, 1), font=("Helvetica", 20), key='-SUBMIT-', button_color=("black", "green"))],
-            [sg.Button("BACK TO MAIN MENU", size=(33, 1), font=("Helvetica", 20), key='-BACK-', button_color=("black", "orange"))]
+            [sg.Text(("Select time unit of measure:"), background_color="#4a4a4a", font=("Helvetica", 25))],
+            [sg.Combo(['Months', 'Days', 'Hours', 'Minutes', 'Seconds'], key='-UNIT-', size=(14, 1), font=("Helvetica", 20))],
+
+            [sg.Text(("Minimum time (number):"), background_color="#4a4a4a", font=("Helvetica", 25))],
+            [sg.InputText([], key='-MITIME-', size=(14, 1), font=("Helvetica", 20))],
+
+            [sg.Text(("Maximum time (number):"), background_color="#4a4a4a", font=("Helvetica", 25))],
+            [sg.InputText([], key='-MATIME-', size=(14, 1), font=("Helvetica", 20))],
+
+            [sg.Text(("Select data set size (number):"), background_color="#4a4a4a", font=("Helvetica", 25))],
+            [sg.InputText([], key='-SIZE-', size=(14, 1), font=("Helvetica", 20))],
+
+            [sg.Button('START ANALYSIS', size=(28, 1), font=("Helvetica", 20), key='-SUBMIT-', button_color=("black", "green"))],
+            [sg.Button("BACK TO MAIN MENU", size=(28, 1), font=("Helvetica", 20), key='-BACK-', button_color=("black", "orange"))],
+
         ]
     ]
 
@@ -49,14 +58,17 @@ def create_start_window():
         if active_window == 'main':
             break
 
-        if start_event == sg.WIN_CLOSED:  # Check for the X button
+        if start_event == sg.WIN_CLOSED:
             break
 
         if start_event == '-SUBMIT-':
-            selected_runtime = start_values['-RUNTIME-']
-            selected_gridtype = start_values['-GRIDTYPE-']
+            selected_gridtype = start_values['-GRID-']
+            selected_unit = start_values['-UNIT-']
+            selected_mitime = start_values['-MITIME-']
+            selected_matime = start_values['-MATIME-']
+            selected_size = start_values['-SIZE-']
 
-            data = analysis()
+            data = analysis(selected_gridtype, selected_unit, selected_mitime, selected_matime, selected_size)
             table_data = []
             for i in range(0, len(data)):
                 row_data = [data[i]['symbol'], data[i]['strategyId'], data[i]['runningTime'], data[i]['roi'], data[i]['coef']]
@@ -66,8 +78,11 @@ def create_start_window():
 
             start_window.close()
             hello_layout = [
-                [sg.Text(f"Selected Runtime: {selected_runtime}", background_color="#4a4a4a", font=("Helvetica", 26, "bold"))],
                 [sg.Text(f"Selected Grid Type: {selected_gridtype}", background_color="#4a4a4a", font=("Helvetica", 26, "bold"))],
+                [sg.Text(f"Selected Time Unit: {selected_unit}", background_color="#4a4a4a", font=("Helvetica", 26, "bold"))],
+                [sg.Text(f"Selected Minimum Time: {selected_mitime}", background_color="#4a4a4a", font=("Helvetica", 26, "bold"))],
+                [sg.Text(f"Selected Maximum Time: {selected_matime}", background_color="#4a4a4a", font=("Helvetica", 26, "bold"))],
+                [sg.Text(f"Selected Date Set Size: {selected_size}", background_color="#4a4a4a", font=("Helvetica", 26, "bold"))],
                 [sg.Table(values=table_data, headings=table_headings, num_rows=20, background_color="#4a4a4a", font=("Helvetica", 15, "bold"), auto_size_columns=False, justification='center', key='-TABLE-')],
                 [sg.Button("BACK TO MAIN MENU", size=(46, 1), font=("Helvetica", 20), key='-OK-', button_color=("black", "orange"))]
 

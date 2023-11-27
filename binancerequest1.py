@@ -8,7 +8,7 @@ from scipy import stats
 
 
 url = 'https://www.binance.com/bapi/capital/v1/public/future/common/strategy/landing-page/queryTopStrategy'
-post = {"page":1,"rows":200,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":0,"runningTimeMax":172800,"sort":"roi"}
+post = {"page":1,"rows":4,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":0,"runningTimeMax":172800,"sort":"roi"}
 
 url_chart = 'https://www.binance.com/bapi/futures/v1/public/future/common/strategy/landing-page/queryRoiChart'
 
@@ -26,9 +26,8 @@ Roi_Av = []
 BinanceList = json.loads(stringResp_edited_3)
 
 print(BinanceList)
-bll = len(BinanceList)
 
-for i in range(0, bll):
+for i in range(0, len(BinanceList)):
     post_chart = {"rootUserId":BinanceList[i]['userId'],"strategyId":BinanceList[i]['strategyId'],"streamerStrategyType":"UM_GRID"}
     jsonResp_chart = requests.post(url_chart, json=post_chart).json()
     stringResp_chart = json.dumps(jsonResp_chart)
@@ -63,22 +62,11 @@ for i in range(0, len(BinanceChart)):
     g_time.insert(i, g_time_temp)
     g_roi.insert(i, g_roi_temp)
     g_roi_hourly.insert(i, g_roi_hourly_temp)
-    g_sd_hourly_temp = np.nanstd(g_roi_hourly_temp)
+    g_sd_hourly_temp = tstd(g_roi_hourly_temp)
     g_sd_hourly.insert(i, g_sd_hourly_temp)
     g_time_temp = []
     g_roi_temp = []
     g_roi_hourly_temp = []
-
-for i in range(0, len(g_sd_hourly)):
-    if g_sd_hourly[i] == 'nan' or g_sd_hourly[i] == 0:
-        del BinanceChart[i]
-        del BinanceList[i]
-        del Roi_Av[i]
-        del g_sd_hourly[i]
-        del g_roi_hourly[i]
-        del g_roi[i]
-        del g_time[i]
-        #i = i-1
 
 # Without hour zero
 print(g_roi_hourly)
@@ -102,11 +90,11 @@ for i in range(0, len(BinanceChart)):
     x = np.linspace(0, len(g_time[i]), len(g_time[i]))
     y = linregress(g_time[i], g_roi[i]).slope * x + linregress(g_time[i], g_roi[i]).intercept
 
-    plt.plot(x, y, ':')
+    # plt.plot(x, y, ':')
 
     print(linregress(g_time[i], g_roi[i], alternative='two-sided'))
 
-plt.show()
+# plt.show()
 
 InTrade = []
 NotInTrade_amount = []
