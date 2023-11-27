@@ -6,18 +6,27 @@ from scipy.stats import linregress, tstd
 from scipy import stats
 
 
-def analysis(stretegytype, rununit, runmin1, runmax1, datasetsize):
+def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
 
-    print(rununit)
-
-    if rununit == 'Hours':
-        runmin = runmin1 * 3600
-        runmax = runmax1 * 3600
-
-
+    match rununit:
+        case 'Hours':
+            runmin = int(runmin) * 3600
+            runmax = int(runmax) * 3600
+        case 'Seconds':
+            runmin = int(runmin)
+            runmax = int(runmax)
+        case 'Minutes':
+            runmin = int(runmin)*60
+            runmax = int(runmax)*60
+        case 'Days':
+            runmin = int(runmin)*3600*24
+            runmax = int(runmax)*3600*24
+        case 'Months':
+            runmin = int(runmin)*60*60*24*30
+            runmax = int(runmax)*60*60*24*30
 
     url = 'https://www.binance.com/bapi/capital/v1/public/future/common/strategy/landing-page/queryTopStrategy'
-    post = {"page":1,"rows":datasetsize,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":runmin,"runningTimeMax":runmax,"sort":"roi"}
+    post = {"page":1,"rows":int(datasetsize),"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":runmin,"runningTimeMax":runmax,"sort":"roi"}
 
     url_chart = 'https://www.binance.com/bapi/futures/v1/public/future/common/strategy/landing-page/queryRoiChart'
 
