@@ -6,9 +6,24 @@ from scipy.stats import linregress, tstd
 from scipy import stats
 
 
-def analysis():
+def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
+
+    match rununit:
+        case "seconds":
+            runmin = runmin
+            runmax = runmax
+        case "minutes":
+            runmin = runmin*60
+            runmax = runmax*60
+        case "hours":
+            runmin = runmin*60*60
+            runmax = runmax*60*60
+        case "days":
+            runmin = runmin*60*60*24
+            runmax = runmax*60*60*24
+
     url = 'https://www.binance.com/bapi/capital/v1/public/future/common/strategy/landing-page/queryTopStrategy'
-    post = {"page":1,"rows":10,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":0,"runningTimeMax":172800,"sort":"roi"}
+    post = {"page":1,"rows":datasetsize,"direction":"","strategyType":2,"symbol":"","zone":"","runningTimeMin":runmin,"runningTimeMax":runmax,"sort":"roi"}
 
     url_chart = 'https://www.binance.com/bapi/futures/v1/public/future/common/strategy/landing-page/queryRoiChart'
 
