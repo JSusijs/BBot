@@ -4,7 +4,10 @@ import math
 import numpy as np
 from scipy.stats import linregress, tstd
 from scipy import stats
+import matplotlib as plt
 
+def chart(strategyid):
+    return 0
 
 def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
 
@@ -40,7 +43,7 @@ def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
 
     BinanceChart = []
     Roi_Av = []
-
+    charts = []
     BinanceList = json.loads(stringResp_edited_3)
 
     for i in range(0, len(BinanceList)):
@@ -52,6 +55,8 @@ def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
         stringResp_edited_chart_3 = stringResp_edited_chart_2.replace("'", "\"")
         BinanceChart.insert(i, json.loads(stringResp_edited_chart_3))
         Roi_Av.insert(i, float(BinanceList[i]['roi'])/(BinanceList[i]['runningTime']/3600))
+        charts.insert(i, BinanceList[i]['strategyId'])
+
 
     g_roi_temp = []
     g_time_temp = []
@@ -77,6 +82,15 @@ def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
         g_roi_temp = []
         g_roi_hourly_temp = []
 
+    for i in range(0, len(BinanceChart)):
+        #plt.plot(g_time[i], g_roi[i])
+        charts_temp=[charts[i],g_time[i],g_roi[i]]
+        charts[i]=charts_temp
+        #linear_analysis = linregress(g_time[i], g_roi[i])
+        #x = np.linspace(0, len(g_time[i]), len(g_time[i]))
+        #y = linregress(g_time[i], g_roi[i]).slope * x + linregress(g_time[i], g_roi[i]).intercept
+        #plt.plot(x, y, ':')
+    print(charts)
     for i in range(0, len(g_sd_hourly)):
         if g_sd_hourly[i] == 'nan' or g_sd_hourly[i] == 0:
             del BinanceChart[i]
@@ -86,7 +100,9 @@ def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
             del g_roi_hourly[i]
             del g_roi[i]
             del g_time[i]
+            del charts[i]
             #i = i-1
+
 
     sharpe = []
     t_value = []
@@ -132,4 +148,4 @@ def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
 
     passed.sort(key=sort_second, reverse=True)
 
-    return passed
+    return passed, charts
