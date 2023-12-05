@@ -4,9 +4,15 @@ import math
 import numpy as np
 from scipy.stats import linregress, tstd
 from scipy import stats
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
-def chart(strategyid):
+
+def chart(time,roi):
+    plt.plot(time, roi)
+    x = np.linspace(0, len(time), len(roi))
+    y = linregress(time, roi).slope * x + linregress(time, roi).intercept
+    plt.plot(x, y, ':')
+    plt.show()
     return 0
 
 def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
@@ -90,7 +96,7 @@ def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
         #x = np.linspace(0, len(g_time[i]), len(g_time[i]))
         #y = linregress(g_time[i], g_roi[i]).slope * x + linregress(g_time[i], g_roi[i]).intercept
         #plt.plot(x, y, ':')
-    print(charts)
+
     for i in range(0, len(g_sd_hourly)):
         if g_sd_hourly[i] == 'nan' or g_sd_hourly[i] == 0:
             del BinanceChart[i]

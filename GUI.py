@@ -1,6 +1,13 @@
 import PySimpleGUI as sg
-from binancerequest2 import analysis
+from binancerequest2 import analysis, chart
+import matplotlib
+import tkinter as tk
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from scipy.stats import linregress
+import numpy as np
 
+matplotlib.use('TkAgg')
 button_size = (7, 1)
 
 def create_main_window():
@@ -68,18 +75,34 @@ def create_instruction_window():
 
     return sg.Window("Instruction", instruction_layout, finalize=True, background_color="#4a4a4a")
 
-def show_row_details(row_data):
+def show_row_details(row_data, x, y):
     sg.theme('DarkGrey1')  # Choose a theme (optional)
+
+    fig = matplotlib.figure.Figure(figsize=(5, 4), dpi=100)
+    x1 = np.linspace(0, len(x), len(y))
+    y1 = linregress(x, y).slope * x1 + linregress(x, y).intercept
+    fig.add_subplot(111).plot(x, y)
+    #fig.subplot(x1, y1, ':')
+
+    def draw_figure(canvasg, figure):
+        tkcanvas2 = FigureCanvasTkAgg(figure, canvasg)
+        tkcanvas2.draw()
+        tkcanvas2.get_tk_widget().pack(side='top', fill='both', expand=1)
+        return tkcanvas2
+
+    # Create PySimpleGUI layout
     popup_layout = [
         [sg.Text(f"Symbol: {row_data['symbol']}")],
         [sg.Text(f"Strategy ID: {row_data['strategyId']}")],
         [sg.Text(f"Runtime: {row_data['runningTime']}")],
         [sg.Text(f"ROI: {row_data['roi']}")],
         [sg.Text(f"Coef: {row_data['coef']}")],
+        [sg.Canvas(key='-CANVAS-')],
         [sg.Button('OK', size=(15, 1), button_color=("black", "orange"), key='OK_BUTTON')]
     ]
 
     popup_window = sg.Window('Row Details', popup_layout, grab_anywhere=True, finalize=True)
+    tkcanvas = draw_figure(popup_window['-CANVAS-'].TKCanvas, fig)
 
     while True:
         event, values = popup_window.read()
@@ -117,7 +140,9 @@ while True:
                 selected_matime = start_values['-MATIME-']
                 selected_size = start_values['-SIZE-']
 
-                data = analysis(selected_gridtype, selected_unit, selected_mitime, selected_matime, selected_size)
+                datarecieve = analysis(selected_gridtype, selected_unit, selected_mitime, selected_matime, selected_size)
+                data = datarecieve[0]
+                graphs = datarecieve[1]
                 table_data = []
                 for i in range(0, len(data)):
                     row_data = [data[i]['symbol'], data[i]['strategyId'], data[i]['runningTime'], data[i]['roi'], data[i]['coef']]
@@ -145,10 +170,23 @@ while True:
                         main_window.un_hide()
                         break
 
+                    graphfound = False
+                    g_x = [0]
+                    g_y = [0]
                     if hello_event == '-TABLE-':
                         selected_row = hello_values['-TABLE-'][0]
                         if selected_row:
-                            show_row_details(data[selected_row])
+                            for i in range(0, len(graphs)):
+                                if graphs[i][0] == data[selected_row]['strategyId']:
+                                    #chart(graphs[i][1], graphs[i][2])
+                                    g_x = graphs[i][1]
+                                    g_y = graphs[i][2]
+                                    graphfound = True
+                                    break
+                            if not graphfound:
+                                print('error: graph not found')
+                            show_row_details(data[selected_row],g_x,g_y)
+
 
     if event == '-INSTRUCTION-':
         active_window = 'instruction'
