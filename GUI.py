@@ -82,7 +82,7 @@ def show_row_details(row_data, x, y):
     x1 = np.linspace(0, len(x), len(y))
     y1 = linregress(x, y).slope * x1 + linregress(x, y).intercept
     fig.add_subplot(111).plot(x, y)
-    #fig.subplot(x1, y1, ':')
+    #fig.add_subplot(111).plot(x, y1, ':')
 
     def draw_figure(canvasg, figure):
         tkcanvas2 = FigureCanvasTkAgg(figure, canvasg)
@@ -157,7 +157,7 @@ while True:
                     [sg.Text(f"Selected Minimum Time: {selected_mitime}", background_color="#4a4a4a", font=("Helvetica", 26, "bold"))],
                     [sg.Text(f"Selected Maximum Time: {selected_matime}", background_color="#4a4a4a", font=("Helvetica", 26, "bold"))],
                     [sg.Text(f"Selected Date Set Size: {selected_size}", background_color="#4a4a4a", font=("Helvetica", 26, "bold"))],
-                    [sg.Table(values=table_data, headings=table_headings, num_rows=20, background_color="#4a4a4a", font=("Helvetica", 15, "bold"), auto_size_columns=False, justification='center', key='-TABLE-', enable_events=True)],
+                    [sg.Table(values=table_data, headings=table_headings, num_rows=20, background_color="#4a4a4a", font=("Helvetica", 15, "bold"), auto_size_columns=True, justification='center', key='-TABLE-', enable_events=True)],
                     [sg.Button("BACK TO MAIN MENU", size=(46, 1), font=("Helvetica", 20), key='-OK-', button_color=("black", "orange"))]
                 ]
                 hello_window = sg.Window("Selected Parameters", hello_layout, finalize=True, background_color="#4a4a4a")

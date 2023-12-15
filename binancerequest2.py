@@ -5,15 +5,17 @@ import numpy as np
 from scipy.stats import linregress, tstd
 from scipy import stats
 import matplotlib.pyplot as plt
+from binanceapi2 import lastprice
 
 
-def chart(time,roi):
+def chart(time, roi):
     plt.plot(time, roi)
     x = np.linspace(0, len(time), len(roi))
     y = linregress(time, roi).slope * x + linregress(time, roi).intercept
     plt.plot(x, y, ':')
     plt.show()
     return 0
+
 
 def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
 
@@ -109,7 +111,6 @@ def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
             del charts[i]
             #i = i-1
 
-
     sharpe = []
     t_value = []
     #Sharpe
@@ -146,8 +147,9 @@ def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
     for i in range(0, len(BinanceList)):
         if Coef[i] > Coef_mean:
             if P_value[i] < pow(10, P_mean_log):
-                passed_temp = {"position": i, "symbol": BinanceList[i]['symbol'], "strategyId": BinanceList[i]['strategyId'], "runningTime": round(BinanceList[i]['runningTime']/3600, 1), "roi": BinanceList[i]['roi'], "coef": round(Coef[i], 8), "p_value": P_value[i]}
-                passed.append(passed_temp)
+                if BinanceList[i]['strategyParams']['lowerLimit'] < lastprice(BinanceList[i]['symbol']) < BinanceList[i]['strategyParams']['upperLimit']:
+                    passed_temp = {"position": i, "symbol": BinanceList[i]['symbol'], "strategyId": BinanceList[i]['strategyId'], "runningTime": round(BinanceList[i]['runningTime']/3600, 1), "roi": BinanceList[i]['roi'], "coef": round(Coef[i], 8), "p_value": P_value[i]}
+                    passed.append(passed_temp)
 
     def sort_second(val):
         return val['coef']
@@ -155,3 +157,4 @@ def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
     passed.sort(key=sort_second, reverse=True)
 
     return passed, charts
+
