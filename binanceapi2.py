@@ -73,4 +73,4 @@ def oi_analysis(symbol, timeframe, candleamount, lowerlimit, upperlimit):
     return oi, price, c, ma, intercept, c_last_trend
 
 
-print(oi_analysis('UNIUSDT', '1h', 100, 5, 5))
+print(oi_analysis('UNIUSDT', '5m', 100, 5, 5))
