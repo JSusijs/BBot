@@ -99,7 +99,8 @@ def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
         #y = linregress(g_time[i], g_roi[i]).slope * x + linregress(g_time[i], g_roi[i]).intercept
         #plt.plot(x, y, ':')
 
-    for i in range(0, len(g_sd_hourly)):
+    i = 0
+    while i < len(g_sd_hourly):
         if g_sd_hourly[i] == 'nan' or g_sd_hourly[i] == 0:
             del BinanceChart[i]
             del BinanceList[i]
@@ -109,7 +110,8 @@ def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
             del g_roi[i]
             del g_time[i]
             del charts[i]
-            #i = i-1
+            i = i - 1
+        i = i + 1
 
     sharpe = []
     t_value = []
@@ -123,10 +125,6 @@ def analysis(stretegytype, rununit, runmin, runmax, datasetsize):
 
     Coef = []
     for i in range(0, len(BinanceList)):
-
-        url_24hr = 'https://www.binance.com/fapi/v1/ticker/24hr?symbol=' + BinanceList[i]['symbol']
-        getResp = requests.get(url_24hr).json()
-
         # P-Value
         P_value.insert(i, stats.ttest_1samp(g_roi_hourly[i], 0).pvalue)
         P_value_log.insert(i, np.log10(P_value[i]))

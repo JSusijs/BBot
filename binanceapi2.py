@@ -38,7 +38,7 @@ def ma_close(price, candlelookback, candlenum):
     price1 = []
     price2 = price
     price2.reverse()
-    if candlenum <= 100-candlelookback:
+    if candlenum <= 150-candlelookback:
         for i in range(candlelookback, candlelookback+candlenum):
             price1.append(price2[i])
         ma = np.mean(price1)
@@ -67,10 +67,10 @@ def oi_analysis(symbol, timeframe, candleamount, lowerlimit, upperlimit):
 
     c = pearsonr(price, oi)
     ma = ma_close(price,0,50)
-    intercept = intercept_candle(price, 0, 50, 100, price_open)
-    c_last_trend = correlation(intercept[0]+2, price, oi, 100)
+    intercept = intercept_candle(price, 0, 50, 150, price_open)
+    c_last_trend = correlation(intercept[0]+2, price, oi, 150)
 
     return oi, price, c, ma, intercept, c_last_trend
 
 
-print(oi_analysis('UNIUSDT', '5m', 100, 5, 5))
+print(oi_analysis('SUIUSDT', '15m', 150, 5, 5))
